@@ -1,0 +1,272 @@
+(function (window) {
+  "use strict";
+
+  var modalsAutoopen = {
+    boltModals: null,
+
+    init: function () {
+      this.loadBoltModals();
+      this.process();
+    },
+
+    /**
+     * Process all modals found
+     */
+    process: function () {
+      var _self = this;
+
+      if (this.boltModals) {
+        this.boltModals.forEach(function (modal) {
+
+          if (modal._wasInitiallyRendered) {
+            _self.appendBehaviour(modal);
+          } else {
+
+            var onModalReady = function (e) {
+              _self.appendBehaviour(modal);
+
+              // IMPORTANT: remove this event listener unless you want it called each time the modal component renders
+              e.target.removeEventListener("modal:ready", onModalReady);
+            };
+
+            modal.addEventListener("modal:ready", onModalReady);
+          }
+        });
+      }
+    },
+
+    /**
+     * Append modal behaviour
+     *
+     * @param modal
+     */
+    appendBehaviour: function (modal) {
+      var scrollSettings = modal.dataset.autoOpenScroll || null;
+      var timeoutSettings = modal.dataset.autoOpenTimeout || null;
+      var bandTags = modal.querySelectorAll('.c-bolt-band');
+
+      if (bandTags) {
+        bandTags.forEach(function (bandTag) {
+          bandTag.classList.remove('c-bolt-band--full-bleed');
+        });
+      }
+
+      if (timeoutSettings) {
+        this.appendTimeoutBehaviour(modal, timeoutSettings);
+      }
+
+      if (scrollSettings) {
+        this.appendScrollBehaviour(modal, scrollSettings);
+      }
+    },
+
+    /**
+     * Append behaviour to open modal after given timeout
+     *
+     * @param modal
+     *  Modal instance
+     * @param settings
+     *  Time in seconds
+     */
+    appendTimeoutBehaviour: function (modal, settings) {
+      var _self = this;
+      var timeout = parseInt(settings) * 1000;
+
+      setTimeout(function () {
+        _self.displayModal(modal);
+      }, timeout);
+    },
+
+    /**
+     * Append behaviour to open after achieve vertical position
+     *
+     * @param modal
+     *  Modal instance
+     * @param settings
+     *  Vertical position in percentage
+     */
+    appendScrollBehaviour: function (modal, settings) {
+      var _self = this;
+      var expectedPosition = parseFloat(settings);
+      var onModalOpen = function () {
+        var currentPosition = _self.getScrollPercent();
+
+        if (currentPosition >= expectedPosition) {
+          window.removeEventListener('scroll', onModalOpen);
+          _self.displayModal(modal);
+        }
+      };
+
+      window.addEventListener('scroll', onModalOpen);
+    },
+
+    /**
+     * Display modal window
+     *
+     * @param modal
+     */
+    displayModal: function (modal) {
+      var _self = this;
+      var modalDisplayInterval = setInterval(function () {
+        if (!_self.isAnyModalOpen()) {
+          clearInterval(modalDisplayInterval);
+          if (modal.getAttribute('security') === '1') {
+            var exists = document.cookie.indexOf(modal.id + '=');
+            if (exists === -1) {
+              modal.show();
+            }
+          }
+          else if (modal.getAttribute('data-base-modal-locations')) {
+            var user_loc = portal_modal_user_info();
+            var modal_loc = modal.getAttribute('data-base-modal-locations').split(' ');
+            var match = modal_loc.filter(function (n){
+              return user_loc.indexOf(n) !== -1;
+            });
+            if (match !== undefined && match.length > 0) {
+              modal.show();
+            }
+          }
+          else {
+            modal.show();
+          }
+        }
+      }, 1000);
+    },
+
+    /**
+     * Check if any modal is already displayed
+     *
+     * @returns {boolean}
+     */
+    isAnyModalOpen: function () {
+      var isOpen = false;
+
+      for (var modalIdx in this.boltModals) {
+        var modal = this.boltModals[modalIdx];
+
+        if (modal.open === true) {
+          isOpen = true;
+          break;
+        }
+      }
+
+      return isOpen;
+    },
+
+    /**
+     * Check current document vertical position
+     *
+     * @returns {number}
+     */
+    getScrollPercent: function () {
+      var h = document.documentElement,
+        b = document.body,
+        st = 'scrollTop',
+        sh = 'scrollHeight';
+      return (h[st] || b[st]) / ((h[sh] || b[sh]) - h.clientHeight) * 100;
+    },
+
+    /**
+     * Load all modals placed on the page
+     */
+    loadBoltModals: function () {
+      this.boltModals = document.querySelectorAll('bolt-modal');
+    }
+  };
+
+  modalsAutoopen.init();
+
+})(window);
+
+
+(function(Drupal){
+  'use strict';
+  Drupal.behaviors.pegaSecurityModal = {
+    attach:function (context, settings) {
+      var form_submitted = document.querySelector(".webform-confirmation");
+      if (form_submitted !== null) {
+        var modal = form_submitted.closest('bolt-modal');
+        if (modal !== null) {
+          document.cookie = modal.getAttribute('id') + " = security_modal";
+          modal.hide();
+        }
+      }
+    }
+  }
+
+})(Drupal);
+// The following is commented out because the Bolt team has promised to revisit
+// it soon and there were several rounds of work getting it to its current state.
+
+// (function(Drupal, drupalSettings) {
+//   'use strict';
+//
+//   /**
+//    * Allow fixed position elements to reposition themselves when modals
+//    * open/close so as to appear that they aren't moving.
+//    */
+//   Drupal.behaviors.pegaBoltVideoPreventShifting = {
+//     /**
+//      * If the browser body has scrollbar, set padding on a fixed element that's the
+//      * width of the scrollbar.
+//      */
+//     setScrollbarPadding: function(element, hasScrollbar, scrollbarWidth) {
+//       if (!element) {
+//         return;
+//       }
+//
+//       if (hasScrollbar) {
+//         const originalPadding = element.style.paddingRight;
+//         const calculatedPadding = window.getComputedStyle(element)[
+//           'padding-right'
+//           ];
+//
+//         // Save original padding value for later
+//         element.setAttribute('data-padding-right', originalPadding);
+//         element.style.paddingRight = parseFloat(calculatedPadding) + scrollbarWidth + 'px';
+//       }
+//     },
+//
+//     /**
+//      * Reset the padding on an element after modal is hidden
+//      */
+//     resetScrollbarPadding: function(element) {
+//       if (!element) {
+//         return;
+//       }
+//
+//       const padding = element.getAttribute('data-padding-right');
+//
+//       element.style.paddingRight = '';
+//
+//       if (typeof padding === 'undefined') {
+//         element.style.paddingRight = '';
+//       } else {
+//         element.removeAttribute('data-padding-right');
+//         // Restore original padding value
+//         element.style.paddingRight = padding;
+//       }
+//     },
+//
+//     attach: function(context) {
+//       const _self = this;
+//
+//       // TODO: Allow this to be configured in drupalSettings.
+//       const fixedElements = context.querySelectorAll('.c-page-header, .c-bolt-sticky')
+//
+//       // Listen for 'modal:show' on the body, event will bubble up from the modal
+//       document.body.addEventListener('modal:show', function(e) {
+//         for (var i = 0; i < fixedElements.length; i++) {
+//           _self.setScrollbarPadding(fixedElements[i], e.detail.hasScrollbar, e.detail.scrollbarWidth);
+//         }
+//       });
+//
+//       // Listen for 'modal:hidden', fires after the modal has animated out
+//       document.body.addEventListener('modal:hidden', function(e) {
+//         for (var i = 0; i < fixedElements.length; i++) {
+//           _self.resetScrollbarPadding(fixedElements[i]);
+//         }
+//       });
+//     }
+//   };
+// })(Drupal, drupalSettings);

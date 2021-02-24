@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="358px" height="256px" viewBox="0 0 358 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 48.2 (47327) - http://www.bohemiancoding.com/sketch -->
+    <title>Loading placeholder</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="page-load" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(-992.000000, -383.000000)" opacity="0.100000001">
+        <g id="Loading-placeholder" transform="translate(992.000000, 383.000000)" fill="#1F2555">
+            <rect id="Rectangle-12-Copy-2" x="0" y="85" width="358" height="46"></rect>
+            <rect id="Rectangle-12-Copy-3" x="0" y="138" width="358" height="46"></rect>
+            <rect id="Rectangle-12-Copy-4" x="0" y="210" width="358" height="46"></rect>
+            <rect id="Rectangle-12-Copy" x="0" y="31" width="184" height="28"></rect>
+            <rect id="Rectangle-12" x="0" y="0" width="357" height="28"></rect>
+        </g>
+    </g>
+</svg>
